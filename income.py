@@ -22,18 +22,28 @@ def create_income():
 
     if request.method == 'POST':
         data = request.get_json()
-        data_values = list(data.values())
+        data_list = list(data.values())
         income_name = data["income_name"]
+
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
+        # Put user id to the front of list
+        data_list.insert(0, user_id)
+        print(data_list)
 
         with connection:
             with connection.cursor() as cursor:
                 if data.get("start_date") is not None:
                     cursor.execute(
-                        "INSERT INTO user_income (user_details_id, income_name, income_type, income_status, amount,frequency, duration_months, start_date, growth_rate) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", data_values)
+                        "INSERT INTO user_income (user_details_id, income_name, income_type, income_status, amount,frequency, duration_months, start_date, growth_rate) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", data_list)
                 else:
                     cursor.execute(
-                        "INSERT INTO user_income (user_details_id, income_name, income_type, income_status, amount,frequency, duration_months, growth_rate) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", data_values)
-        return {"msg": f"{income_name} created!"}, 201
+                        "INSERT INTO user_income (user_details_id, income_name, income_type, income_status, amount,frequency, duration_months, growth_rate) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", data_list)
+        return {"msg": f"Successfully created {income_name}!"}, 201
 
 
 # GET ALL ROUTE FOR A SPECIFIC USER

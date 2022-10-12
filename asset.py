@@ -2,6 +2,7 @@ import os
 import psycopg2
 from flask import Blueprint, request
 from dotenv import load_dotenv
+import jwt
 
 
 load_dotenv()
@@ -10,8 +11,11 @@ asset = Blueprint('asset', __name__)
 url = os.environ.get("DATABASE_URL")  # gets variables from environment
 connection = psycopg2.connect(url)
 
+secret = os.environ.get("SECRET")
 
 # CREATE ROUTE
+
+
 @asset.route("/", methods=["POST"])
 def create_asset():
 
