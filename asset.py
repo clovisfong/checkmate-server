@@ -82,6 +82,6 @@ def get_asset(id):
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "DELETE FROM user_asset WHERE id= %s", (str(id)))
+                    f"DELETE FROM user_asset WHERE id= '{id}'")
 
             return {"msg": f"Deleted asset with id: {id}"}, 201

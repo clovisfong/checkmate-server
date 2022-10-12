@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from flask import Blueprint, request
+from flask_cors import CORS
 import bcrypt
 import jwt
 from dotenv import load_dotenv
@@ -9,12 +10,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 users = Blueprint('users', __name__)
+CORS(users)
 url = os.environ.get("DATABASE_URL")  # gets variables from environment
 connection = psycopg2.connect(url)
 
 secret = os.environ.get("SECRET")
 
 # CREATE ROUTE
+
 
 @users.route("/", methods=["POST"])
 def create_user():
@@ -71,19 +74,22 @@ def get_all_users():
     if request.method == 'GET':
         with connection:
             with connection.cursor() as cursor:
-                cursor.execute(
-                    "SELECT * FROM user_details")
-                columns = list(cursor.description)
-                result = cursor.fetchall()
+                try:
+                    cursor.execute(
+                        "SELECT * FROM user_details")
+                    columns = list(cursor.description)
+                    result = cursor.fetchall()
 
-                results = []
-                for row in result:
-                    row_dict = {}
-                    for i, col in enumerate(columns):
-                        row_dict[col.name] = row[i]
-                    del row_dict['password']
-                    results.append(row_dict)
-            return results, 201
+                    results = []
+                    for row in result:
+                        row_dict = {}
+                        for i, col in enumerate(columns):
+                            row_dict[col.name] = row[i]
+                        del row_dict['password']
+                        results.append(row_dict)
+                    return results, 201
+                except Exception as error:
+                    return {"error": f"{error}"}, 401
 
 
 # GET ONE / UPDATE / DELETE ROUTE
@@ -154,7 +160,7 @@ def user_login():
         email = data["email"]
         pw = data["password"]
         bytes = pw.encode('utf-8')
-
+        print(data)
         with connection:
             with connection.cursor() as cursor:
                 # check for user data
@@ -175,10 +181,11 @@ def user_login():
                 print(str(user_dict['created_at']))
                 if result:
                     # Set up payload
-                    user_dict['date_of_birth'] = str(user_dict['date_of_birth'])
+                    user_dict['date_of_birth'] = str(
+                        user_dict['date_of_birth'])
                     del user_dict['password']
                     del user_dict['created_at']
-                    del user_dict['updated_at'] 
+                    del user_dict['updated_at']
                     payload_data = user_dict
 
                     token = jwt.encode(
@@ -186,8 +193,6 @@ def user_login():
                         secret,
                         algorithm="HS256"
                     )
-
-                    
 
                     return {"token": f"{token}"}, 201
 

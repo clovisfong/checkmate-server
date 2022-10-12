@@ -90,6 +90,6 @@ def get_expense(id):
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "DELETE FROM user_expense WHERE id= %s", (str(id)))
+                    f"DELETE FROM user_expense WHERE id= '{id}'")
 
             return {"msg": f"Deleted expense with id: {id}"}, 201

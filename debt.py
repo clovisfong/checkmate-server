@@ -81,6 +81,6 @@ def get_debt(id):
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "DELETE FROM user_debt WHERE id= %s", (str(id)))
+                    f"DELETE FROM user_debt WHERE id= '{id}'")
 
             return {"msg": f"Deleted debt with id: {id}"}, 201
