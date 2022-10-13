@@ -21,24 +21,44 @@ def create_debt():
 
     if request.method == 'POST':
         data = request.get_json()
-        data_values = list(data.values())
+        data_list = list(data.values())
         debt_name = data["debt_name"]
+
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
+        # Put user id to the front of list
+        data_list.insert(0, user_id)
+        print(data_list)
 
         with connection:
             with connection.cursor() as cursor:
-                cursor.execute("INSERT INTO user_debt (debt_name, debt_type, debt_status, loan_amount,interest_rate, commitment_period_months, start_date, monthly_commitment) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", data_values)
-        return {"msg": f"{debt_name} created!"}, 201
+                if data.get("start_date") is not None:
+                    cursor.execute("INSERT INTO user_debt (user_details_id, debt_name, debt_type, debt_status, loan_amount, interest_rate, commitment_period_months, start_date, monthly_commitment) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", data_list)
+                else:
+                    cursor.execute(
+                        "INSERT INTO user_debt (user_details_id, debt_name, debt_type, debt_status, loan_amount, interest_rate, commitment_period_months, monthly_commitment) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", data_list)
+        return {"msg": f"Successfully created {debt_name}!"}, 201
 
 
-# GET ALL ROUTE
+# GET ALL ROUTE FOR A SPECIFIC USER
 @debt.route("/", methods=["GET"])
 def get_all_debt():
 
     if request.method == 'GET':
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "SELECT *, to_char(start_date, 'DD-MM-YYYY') As NewDateFormat FROM user_debt")
+                    f"SELECT * FROM user_debt WHERE user_details_id={user_id}")
                 columns = list(cursor.description)
                 result = cursor.fetchall()
 
@@ -75,11 +95,21 @@ def get_debt(id):
         data_list.append(id)
         debt_name = data["debt_name"]
 
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
+        # Put user id to the front of list
+        data_list.insert(0, user_id)
+        print(data_list)
+
         with connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE user_debt SET debt_name=%s, debt_type=%s, debt_status=%s, purchase_value=%s, down_payment=%s, loan_amount=%s, interest_rate=%s, commitment_period_months=%s, start_date=%s, monthly_commitment=%s WHERE id = %s", (
+                cursor.execute("UPDATE user_debt SET user_details_id=%s, debt_name=%s, debt_type=%s, debt_status=%s, loan_amount=%s, interest_rate=%s, commitment_period_months=%s, start_date=%s, monthly_commitment=%s WHERE id = %s", (
                     data_list))
-        return {"msg": f"{debt_name} updated!"}, 201
+        return {"msg": f"Successfully updated {debt_name}!"}, 201
 
     if request.method == 'DELETE':
         with connection:
@@ -87,4 +117,4 @@ def get_debt(id):
                 cursor.execute(
                     f"DELETE FROM user_debt WHERE id= '{id}'")
 
-            return {"msg": f"Deleted debt with id: {id}"}, 201
+            return {"msg": f"Successfully deleted"}, 201
