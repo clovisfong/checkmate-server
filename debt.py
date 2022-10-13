@@ -21,6 +21,7 @@ def create_debt():
 
     if request.method == 'POST':
         data = request.get_json()
+        data["commitment_period_months"] = data["commitment_period_months"]*12
         data_list = list(data.values())
         debt_name = data["debt_name"]
 
@@ -91,6 +92,7 @@ def get_debt(id):
 
     if request.method == 'PUT':
         data = request.get_json()
+        data["commitment_period_months"] = data["commitment_period_months"]*12
         data_list = list(data.values())
         data_list.append(id)
         debt_name = data["debt_name"]

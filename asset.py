@@ -22,13 +22,23 @@ def create_asset():
     if request.method == 'POST':
         data = request.get_json()
         data_list = list(data.values())
-
         asset_name = data["asset_name"]
+
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
+        # Put user id to the front of list
+        data_list.insert(0, user_id)
+        print(data_list)
+
         with connection:
             with connection.cursor() as cursor:
-                cursor.execute("INSERT INTO user_asset (asset_name, asset_type, current_value) VALUES (%s, %s, %s)", (
+                cursor.execute("INSERT INTO user_asset (user_details_id, asset_name, asset_type, current_value) VALUES (%s, %s, %s, %s)", (
                     data_list))
-        return {"msg": f"{asset_name} created!"}, 201
+        return {"msg": f"Successfully created {asset_name}!"}, 201
 
 
 # GET ALL ROUTE

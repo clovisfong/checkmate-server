@@ -22,8 +22,10 @@ def create_income():
 
     if request.method == 'POST':
         data = request.get_json()
+        data["duration_months"] = data["duration_months"]*12
         data_list = list(data.values())
         income_name = data["income_name"]
+        print(data)
 
         # Decode Token and get User ID
         bearer_token = request.headers.get('Authorization')
@@ -92,6 +94,7 @@ def get_income(id):
 
     if request.method == 'PUT':
         data = request.get_json()
+        data["duration_months"] = data["duration_months"]*12
         data_list = list(data.values())
         data_list.append(id)
         income_name = data["income_name"]

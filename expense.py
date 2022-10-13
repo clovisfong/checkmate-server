@@ -21,6 +21,7 @@ def create_expense():
 
     if request.method == 'POST':
         data = request.get_json()
+        data["duration_months"] = data["duration_months"]*12
         data_list = list(data.values())
         expense_name = data["expense_name"]
 
@@ -94,6 +95,7 @@ def get_expense(id):
 
     if request.method == 'PUT':
         data = request.get_json()
+        data["duration_months"] = data["duration_months"]*12
         data_list = list(data.values())
         data_list.append(id)
         print(data)
