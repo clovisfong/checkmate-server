@@ -23,7 +23,7 @@ def create_asset():
         data = request.get_json()
         data_list = list(data.values())
         asset_name = data["asset_name"]
-
+        print(data)
         # Decode Token and get User ID
         bearer_token = request.headers.get('Authorization')
         token = bearer_token.split()[1]
@@ -46,10 +46,16 @@ def create_asset():
 def get_all_asset():
 
     if request.method == 'GET':
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "SELECT * FROM user_asset")
+                    f"SELECT * FROM user_asset WHERE user_details_id={user_id}")
                 columns = list(cursor.description)
                 result = cursor.fetchall()
 
@@ -86,11 +92,21 @@ def get_asset(id):
         data_list.append(id)
         asset_name = data["asset_name"]
 
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
+        # Put user id to the front of list
+        data_list.insert(0, user_id)
+        print(data_list)
+
         with connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE user_asset SET asset_name=%s, asset_type=%s, current_value=%s WHERE id = %s", (
+                cursor.execute("UPDATE user_asset SET user_details_id=%s, asset_name=%s, asset_type=%s, current_value=%s WHERE id = %s", (
                     data_list))
-        return {"msg": f"{asset_name} updated!"}, 201
+        return {"msg": f"Successfully updated {asset_name}!"}, 201
 
     if request.method == 'DELETE':
         with connection:
@@ -98,4 +114,4 @@ def get_asset(id):
                 cursor.execute(
                     f"DELETE FROM user_asset WHERE id= '{id}'")
 
-            return {"msg": f"Deleted asset with id: {id}"}, 201
+            return {"msg": f"Successfully deleted"}, 201

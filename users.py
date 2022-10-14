@@ -44,7 +44,7 @@ def create_user():
                         data_list))
                 # check for user data
                     cursor.execute(
-                        f"SELECT *, to_char(date_of_birth, 'DD-MM-YYYY') As new_birthdate FROM user_details WHERE email = '{email}'")
+                        f"SELECT * FROM user_details WHERE email = '{email}'")
                     columns = list(cursor.description)
                     user_result = cursor.fetchone()
 
