@@ -40,31 +40,35 @@ def create_user():
             name = data["name"]
             with connection:
                 with connection.cursor() as cursor:
-                    cursor.execute("INSERT INTO user_details (name, date_of_birth, gender, email, password) VALUES (%s, %s, %s, %s, %s)", (
-                        data_list))
-                # check for user data
-                    cursor.execute(
-                        f"SELECT * FROM user_details WHERE email = '{email}'")
-                    columns = list(cursor.description)
-                    user_result = cursor.fetchone()
+                    try:
+                        cursor.execute("INSERT INTO user_details (name, date_of_birth, gender, email, password) VALUES (%s, %s, %s, %s, %s)", (
+                            data_list))
+                    # check for user data
+                        cursor.execute(
+                            f"SELECT * FROM user_details WHERE email = '{email}'")
+                        columns = list(cursor.description)
+                        user_result = cursor.fetchone()
 
-                    # Make a dict for user data
-                    user_dict = {}
-                    for i, col in enumerate(columns):
-                        user_dict[col.name] = user_result[i]
+                        # Make a dict for user data
+                        user_dict = {}
+                        for i, col in enumerate(columns):
+                            user_dict[col.name] = user_result[i]
 
-                     # Set up payload
-                    del user_dict['password']
-                    del user_dict['date_of_birth']
-                    del user_dict['created_at']
-                    del user_dict['updated_at']
-                    payload_data = user_dict
+                        # Set up payload
+                        user_dict['date_of_birth'] = str(
+                            user_dict['date_of_birth'])
+                        del user_dict['password']
+                        del user_dict['created_at']
+                        del user_dict['updated_at']
+                        payload_data = user_dict
 
-                    token = jwt.encode(
-                        payload=payload_data,
-                        key=secret
-                    )
-                    return {"token": f"{token}"}, 201
+                        token = jwt.encode(
+                            payload=payload_data,
+                            key=secret
+                        )
+                        return {"token": f"{token}"}, 201
+                    except Exception as error:
+                        return {"error": "Email is already in used!"}, 401
 
 
 # GET ALL ROUTE

@@ -23,14 +23,15 @@ def create_all():
 
     if request.method == 'POST':
         data = request.get_json()
-        print(data)
+        print(data[2])
+        data[0]["duration_months"] = data[0]["duration_months"]*12
+        data[1]["duration_months"] = data[1]["duration_months"]*12
+        data[2]["commitment_period_months"] = data[2]["commitment_period_months"]*12
         income_list = list(data[0].values())
         expense_list = list(data[1].values())
         debt_list = list(data[2].values())
         asset_list = list(data[3].values())
-
-        data_list = list(data.values())
-        asset_name = data["asset_name"]
+        # print(income_list)
 
         # Decode Token and get User ID
         bearer_token = request.headers.get('Authorization')
