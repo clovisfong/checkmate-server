@@ -194,29 +194,6 @@ def get_users(id):
 
                 else:
                     return {"msg": "Password didn't match. Try again."}, 401
-                # if len(data["password"]) >= 8:
-
-                #     pw = data["password"]
-                #     bytes = pw.encode('utf-8')
-                #     salt = bcrypt.gensalt()
-                #     password = bcrypt.hashpw(bytes, salt)
-                #     decode_password = password.decode('utf8')
-                #     data["password"] = decode_password
-
-                #     data_list = list(data.values())
-                #     data_list.append(id)
-                #     cursor.execute(
-                #         "UPDATE user_details SET name=%s, date_of_birth=%s, gender=%s, email=%s, password=%s, retirement_age=%s, retirement_lifestyle=%s, legacy_allocation=%s, life_expectancy=%s  WHERE id=%s",
-                #         data_list)
-                #     return {"msg": f"Account updated with id: {id}"}, 201
-                # else:
-                #     del data["password"]
-                #     data_list_old_pw = list(data.values())
-                #     data_list_old_pw.append(id)
-                #     cursor.execute(
-                #         "UPDATE user_details SET name=%s, date_of_birth=%s, gender=%s, email=%s, retirement_age=%s, retirement_lifestyle=%s, legacy_allocation=%s, life_expectancy=%s  WHERE id=%s",
-                #         data_list_old_pw)
-                #     return {"msg": f"Account updated with id: {id}"}, 201
 
     if request.method == 'DELETE':
         with connection:
@@ -232,7 +209,7 @@ def get_users(id):
                     return {"msg": f"Deleted Account with id: {id}"}, 201
 
 
-# USER LOGIN # HOW TO COMPARE
+# USER LOGIN
 @users.route("/login", methods=["POST"])
 def user_login():
 
@@ -283,3 +260,97 @@ def user_login():
                     # return test, 201
                 else:
                     return {"msg": "Password didn't match. Try again."}, 401
+
+
+# UPDATE PASSWORD
+
+@users.route("/changepassword/<int:id>", methods=["PUT"])
+def change_pw(id):
+
+    if request.method == 'PUT':
+
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
+        # get user password
+        data = request.get_json()
+        old_pw = data["old_password"]
+        bytes = old_pw.encode('utf-8')
+
+        new_pw = data["new_password"]
+        confirm_pw = data["confirm_password"]
+
+        with connection:
+            with connection.cursor() as cursor:
+
+                # Get user original data
+                cursor.execute(
+                    f"SELECT * FROM user_details WHERE id= {user_id}")
+                columns = list(cursor.description)
+                user_result = cursor.fetchone()
+
+                # Make a dict for user data
+                user_dict = {}
+                for i, col in enumerate(columns):
+                    user_dict[col.name] = user_result[i]
+
+                # Validate password to get true or false
+                decode_password = user_dict['password']
+                encode_password = decode_password.encode('utf-8')
+                result = bcrypt.checkpw(bytes, encode_password)
+
+                if result:
+                    if new_pw == confirm_pw:
+
+                        # hash new password
+                        bytes = new_pw.encode('utf-8')
+                        salt = bcrypt.gensalt()
+                        password = bcrypt.hashpw(bytes, salt)
+                        decode_password = password.decode('utf8')
+
+                        user_dict["password"] = decode_password
+                        del user_dict['created_at']
+                        del user_dict['updated_at']
+
+                        data_list = list(user_dict.values())
+                        data_list.pop(0)
+                        data_list.append(id)
+
+                        cursor.execute(
+                            "UPDATE user_details SET name=%s, date_of_birth=%s, gender=%s, email=%s, password=%s, retirement_age=%s, retirement_lifestyle=%s, legacy_allocation=%s, life_expectancy=%s  WHERE id=%s",
+                            data_list)
+
+                        # retrive user new data
+                        cursor.execute(
+                            f"SELECT * FROM user_details WHERE id= {user_id}")
+                        columns = list(cursor.description)
+                        user_result = cursor.fetchone()
+
+                        # Make a dict for user new data
+                        user_dict = {}
+                        for i, col in enumerate(columns):
+                            user_dict[col.name] = user_result[i]
+
+                        # Set up payload
+                        user_dict['date_of_birth'] = str(
+                            user_dict['date_of_birth'])
+                        del user_dict['password']
+                        del user_dict['created_at']
+                        del user_dict['updated_at']
+                        payload_data = user_dict
+
+                        token = jwt.encode(
+                            payload=payload_data,
+                            key=secret
+                        )
+
+                        return {"token": f"{token}"}, 201
+
+                    else:
+                        return {"msg": "New password didn't match."}, 401
+
+                else:
+                    return {"msg": "Old password is wrong. Try again."}, 401
