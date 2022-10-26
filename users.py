@@ -196,17 +196,29 @@ def get_users(id):
                     return {"msg": "Password didn't match. Try again."}, 401
 
     if request.method == 'DELETE':
-        with connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    f"SELECT * FROM user_details WHERE id= '{id}'")
-                result = cursor.fetchall()
-                if len(result) == 0:
-                    return {"msg": "User not found"}, 401
-                else:
+
+        # Decode Token and get User ID
+        bearer_token = request.headers.get('Authorization')
+        token = bearer_token.split()[1]
+        user_details = jwt.decode(token, secret, algorithms=["HS256"])
+        user_id = user_details['id']
+
+        if user_id == id:
+
+            with connection:
+                with connection.cursor() as cursor:
                     cursor.execute(
-                        f"DELETE FROM user_details WHERE id= '{id}'")
-                    return {"msg": f"Deleted Account with id: {id}"}, 201
+                        f"SELECT * FROM user_details WHERE id= '{id}'")
+                    result = cursor.fetchall()
+                    if len(result) == 0:
+                        return {"msg": "User not found"}, 401
+                    else:
+                        cursor.execute(
+                            f"DELETE FROM user_details WHERE id= '{id}'")
+                        return {"msg": f"Deleted Account with id: {id}"}, 201
+
+        else:
+            return {"msg": "Not authorized to delete"}, 401
 
 
 # USER LOGIN
