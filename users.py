@@ -239,39 +239,43 @@ def user_login():
                 columns = list(cursor.description)
                 user_result = cursor.fetchone()
 
-                # Make a dict for user data
-                user_dict = {}
-                for i, col in enumerate(columns):
-                    user_dict[col.name] = user_result[i]
+                if user_result:
+                    # Make a dict for user data
+                    user_dict = {}
+                    for i, col in enumerate(columns):
+                        user_dict[col.name] = user_result[i]
 
-                # Validate password
-                decode_password = user_dict['password']
-                encode_password = decode_password.encode('utf-8')
-                result = bcrypt.checkpw(bytes, encode_password)
-                print(str(user_dict['created_at']))
-                if result:
-                    # Set up payload
-                    user_dict['date_of_birth'] = str(
-                        user_dict['date_of_birth'])
-                    del user_dict['password']
-                    del user_dict['created_at']
-                    del user_dict['updated_at']
-                    payload_data = user_dict
+                    # Validate password
+                    decode_password = user_dict['password']
+                    encode_password = decode_password.encode('utf-8')
+                    result = bcrypt.checkpw(bytes, encode_password)
+                    print(str(user_dict['created_at']))
+                    if result:
+                        # Set up payload
+                        user_dict['date_of_birth'] = str(
+                            user_dict['date_of_birth'])
+                        del user_dict['password']
+                        del user_dict['created_at']
+                        del user_dict['updated_at']
+                        payload_data = user_dict
 
-                    token = jwt.encode(
-                        payload_data,
-                        secret,
-                        algorithm="HS256"
-                    )
+                        token = jwt.encode(
+                            payload_data,
+                            secret,
+                            algorithm="HS256"
+                        )
 
-                    return {"token": f"{token}"}, 201
+                        return {"token": f"{token}"}, 201
 
-                    # decode
-                    # test = jwt.decode(token, secret, algorithms=["HS256"])
-                    # {'some': 'payload'}
-                    # return test, 201
+                        # decode
+                        # test = jwt.decode(token, secret, algorithms=["HS256"])
+                        # {'some': 'payload'}
+                        # return test, 201
+                    else:
+                        return {"msg": "Password didn't match. Try again."}, 401
+
                 else:
-                    return {"msg": "Password didn't match. Try again."}, 401
+                    return {"msg": "Email did not exist."}, 401
 
 
 # UPDATE PASSWORD
